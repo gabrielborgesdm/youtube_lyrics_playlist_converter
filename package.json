@@ -1,0 +1,27 @@
+{
+  "name": "youtube_playlist_builder",
+  "version": "1.0.0",
+  "description": "I wanted to create an app that retrieves a YouTube playlist filled with songs and identifies their audio-only versions. I needed this because when importing songs from Spotify, existing tools in the market, like Spotify Downloader, often fetch the 'Official version,' which includes additional audio elements or annotations beyond the song itself.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --env-file=.env index.js",
+    "dev": "nodemon -r dotenv/config index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "googleapis": "^133.0.0",
+    "url": "^0.11.3"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.4",
+    "eslint": "^8.56.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "nodemon": "^3.0.3"
+  }
+}
