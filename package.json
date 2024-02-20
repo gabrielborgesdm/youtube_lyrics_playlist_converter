@@ -1,7 +1,7 @@
 {
-  "name": "youtube_playlist_builder",
+  "name": "youtube_lyrics_playlist_converter",
   "version": "1.0.0",
-  "description": "I wanted to create an app that retrieves a YouTube playlist filled with songs and identifies their audio-only versions. I needed this because when importing songs from Spotify, existing tools in the market, like Spotify Downloader, often fetch the 'Official version,' which includes additional audio elements or annotations beyond the song itself.",
+  "description": "I wanted to create an app that reconstructs youtube playlists exclusively with lyric versions. I needed this because when importing songs from Spotify, existing tools in the market, like Spotify Downloader, often fetch the 'Official version,' which includes additional audio elements or annotations beyond the song itself.",
   "main": "index.js",
   "type": "module",
   "scripts": {
