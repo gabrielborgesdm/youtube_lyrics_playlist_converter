@@ -1,8 +1,8 @@
 import { google } from 'googleapis'
 
 export default class YoutubeService {
-  constructor () {
-    this.youtube = google.youtube({ version: 'v3', auth: process.env.YOUTUBE_DATA_API_KEY })
+  constructor (auth = process.env.YOUTUBE_DATA_API_KEY) {
+    this.youtube = google.youtube({ version: 'v3', auth })
   }
 
   async getPlaylistItemsTitles (songs = [], pageToken = null) {
@@ -42,5 +42,58 @@ export default class YoutubeService {
         resolve(res.data)
       })
     })
+  }
+
+  async createPlaylist () {
+    const response = await this.youtube.playlists.insert({
+      part: 'snippet',
+      requestBody: {
+        snippet: {
+          title: process.env.YOUTUBE_NEW_PLAYLIST_NAME
+        }
+      }
+    })
+    console.log(`Playlist ${process.env.YOUTUBE_NEW_PLAYLIST_NAME} created with id: ${response.data.id}`)
+
+    return response.data.id
+  }
+
+  async searchSong (songTitle) {
+    try {
+      const response = await this.youtube.search.list({
+        part: 'snippet',
+        q: songTitle,
+        type: 'video'
+      })
+
+      if (response.data.items.length > 0) {
+        return response.data.items[0].id.videoId
+      } else {
+        console.log(`Song not found: ${songTitle}`)
+      }
+    } catch (error) {
+      console.log(`could not search: ${songTitle}`)
+      console.log(error.response.data)
+    }
+    return undefined
+  }
+
+  async addSongToPlaylist (playlistId, videoId) {
+    try {
+      await this.youtube.playlistItems.insert({
+        part: 'snippet',
+        requestBody: {
+          snippet: {
+            playlistId,
+            resourceId: {
+              kind: 'youtube#video',
+              videoId
+            }
+          }
+        }
+      })
+    } catch (error) {
+      console.log('could not add videoId: ', videoId)
+    }
   }
 }
