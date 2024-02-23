@@ -1,12 +1,27 @@
 import { google } from 'googleapis'
+import AuthService from './auth.service.js'
 
 export default class YoutubeService {
-  constructor (auth = process.env.YOUTUBE_DATA_API_KEY) {
+  constructor () {
+    this.youtube = null
+  }
+
+  async initClient () {
+    const authService = new AuthService()
+    const auth = await authService.authenticate()
     this.youtube = google.youtube({ version: 'v3', auth })
   }
 
-  async getPlaylistItemsTitles (songs = [], pageToken = null) {
-    const data = await this.getPlaylistVideos(pageToken)
+  async getPlaylistSongTitles (playlistId) {
+    console.log('Retrieving songs from playlist...')
+    const songs = await this.#findSongs(playlistId)
+    if (songs.length === 0) throw new Error('No songs were found for this playlist')
+
+    return songs
+  }
+
+  async #findSongs (playlistId, songs = [], pageToken = null) {
+    const data = await this.#searchPlaylistVideos(playlistId, pageToken)
     const videos = data?.items
 
     if (videos?.length === 0) {
@@ -16,19 +31,20 @@ export default class YoutubeService {
     songs.push(...currentVideos)
 
     if (currentVideos.length === 50) {
-      await this.getPlaylistItemsTitles(songs, data.nextPageToken)
+      await this.#findSongs(playlistId, songs, data.nextPageToken)
     }
 
     return songs
   }
 
-  async getPlaylistVideos (pageToken) {
+  async #searchPlaylistVideos (playlistId, pageToken) {
+    await this.#waitInterval()
     const playlistParams = {
       part: [
         'snippet,contentDetails'
       ],
       maxResults: 50,
-      playlistId: process.env.YOUTUBE_PLAYLIST_ID,
+      playlistId,
       pageToken
     }
 
@@ -44,21 +60,50 @@ export default class YoutubeService {
     })
   }
 
-  async createPlaylist () {
+  async findOrCreatePlaylist (title) {
+    await this.#waitInterval()
+    try {
+      return await this.findPlaylistByTitle(title)
+    } catch (error) {
+      return await this.createPlaylist(title)
+    }
+  }
+
+  async findPlaylistByTitle (title) {
+    const response = await this.youtube.playlists.list({
+      part: 'snippet',
+      q: title,
+      type: 'playlist',
+      mine: process.env.ONLY_PRIVATE_PLAYLISTS | true
+    })
+
+    const playlist = response.data.items?.filter((item) => item.snippet.title === title)
+    if (!playlist?.length) {
+      throw new Error(`Playlist '${title}' not found`)
+    }
+
+    return playlist[0].id
+  }
+
+  async createPlaylist (title) {
     const response = await this.youtube.playlists.insert({
       part: 'snippet',
       requestBody: {
         snippet: {
-          title: process.env.YOUTUBE_NEW_PLAYLIST_NAME
+          title
         }
       }
     })
-    console.log(`Playlist ${process.env.YOUTUBE_NEW_PLAYLIST_NAME} created with id: ${response.data.id}`)
+
+    console.log(`Playlist '${title}' created with id: ${response.data.id}`)
 
     return response.data.id
   }
 
   async searchSong (songTitle) {
+    console.log(`Searching for song ${songTitle}...`)
+    await this.#waitInterval()
+
     try {
       const response = await this.youtube.search.list({
         part: 'snippet',
@@ -79,6 +124,9 @@ export default class YoutubeService {
   }
 
   async addSongToPlaylist (playlistId, videoId) {
+    console.log(`adding song with id${videoId}...`)
+    await this.#waitInterval()
+
     try {
       await this.youtube.playlistItems.insert({
         part: 'snippet',
@@ -93,7 +141,16 @@ export default class YoutubeService {
         }
       })
     } catch (error) {
-      console.log('could not add videoId: ', videoId)
+      console.log('could not song, skipping to the next')
+      return false
     }
+
+    return true
+  }
+
+  async #waitInterval (milliseconds = 3000) {
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(), milliseconds)
+    })
   }
 }

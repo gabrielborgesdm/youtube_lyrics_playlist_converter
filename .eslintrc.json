@@ -1,7 +1,8 @@
 {
     "env": {
         "es2021": true,
-        "node": true
+        "node": true,
+        "jest": true
     },
     "extends": "standard",
     "parserOptions": {
@@ -9,5 +10,6 @@
         "sourceType": "module"
     },
     "rules": {
+        
     }
 }
